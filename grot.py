@@ -5,15 +5,19 @@ import os
 from time import sleep
 import subprocess
 
+
 archive_files = False # Parses git log for every repo and collects every verion of all files ever committed
 collect_authors = True # Parses git log for author names/email addresses
-unique_authors = True # If true, then only display each author name once
-include_forks = True # Set to true if you want to include repos the target had forked from somewhere else
+unique_authors = False # If true, then only display each author name once
+author_activity = False # set to an author name/email address or string to only display projects this author worked on
+exclude_github_noreply_addr = True
+include_forks = False # Set to true if you want to include repos the target had forked from somewhere else
 download_avatar = False # Download the github profile picture
 
 github_api_base_url = "https://api.github.com/"
 username = "montysecurity"
 all_authors = []
+investigation = " tmp1"
 
 def get_user_info(url):
     userdictionary = {}
@@ -56,7 +60,10 @@ def parse_repos(repos):
 
 def download_and_extract_repo_data(name, url, restore_branch):
     if collect_authors or archive_files:
-        os.system("git clone " + str(url))
+        print(f"[+] Cloning {name}")
+        cmd = ["git", "clone", f"{str(url)}"]
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc.wait()
     else:
         return
     if collect_authors:
@@ -79,27 +86,54 @@ def download_and_extract_repo_data(name, url, restore_branch):
     sleep(3)
     os.chdir("../")
 
-userdictionary = get_user_info(github_api_base_url + "users/" + username)
-if download_avatar:
-    get_avatar(userdictionary["avatar_url"])
-repos = get_repos(userdictionary["repos_url"])
-parse_repos(repos)
-
-print()
-print()
-
-last_author = ""
-for mapping in sorted(all_authors):
-    try:
-        author = str(mapping).split(" ------ ")[0]
-    except IndexError:
-        continue
-    try:
-        repo = str(mapping).split(" ------ ")[1]
-    except IndexError:
-        continue
-    if unique_authors:
-        if last_author == author:
+def print_authors():
+    if author_activity is not False:
+        print(f"\n\n--------------------------- REPOS (where author contains '{author_activity}') ----------------------")
+    if author_activity is False:
+        print("\n\n--------------------------- AUTHORS ----------------------")
+    last_author = ""
+    for mapping in sorted(all_authors):
+        try:
+            author = str(mapping).split(" ------ ")[0]
+        except IndexError:
             continue
-    print(f"{author}: {repo}")
-    last_author = author
+        try:
+            repo = str(mapping).split(" ------ ")[1]
+        except IndexError:
+            continue
+        if exclude_github_noreply_addr:
+            if "users.noreply.github.com" in author:
+                continue
+        if author_activity is not False:
+            if author_activity in author:
+                print(f"[+] {str(repo)}")
+            continue
+        if unique_authors:
+            if last_author == author:
+                continue
+        print(f"[+] {author}: {repo}")
+        last_author = author
+
+def main():
+    try:
+        os.mkdir(investigation)
+    except FileExistsError:
+        os.rmdir(investigation)
+        sleep(1)
+        os.mkdir(investigation)
+    os.chdir(investigation)
+    userdictionary = get_user_info(github_api_base_url + "users/" + username)
+    if download_avatar:
+        get_avatar(userdictionary["avatar_url"])
+    repos = get_repos(userdictionary["repos_url"])
+    parse_repos(repos)
+    os.chdir("../")
+    print()
+    print("-------------------------- USER GITHUB INFO -----------------------")
+    for k in userdictionary:
+        print(f"[+] {k}: {userdictionary[k]}")
+    if collect_authors:
+        print_authors()
+        print()
+
+main()
