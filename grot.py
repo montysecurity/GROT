@@ -4,20 +4,29 @@ import hashlib
 import os
 from time import sleep
 import subprocess
+import argparse
+import shutil
 
+parser = argparse.ArgumentParser(description="Program Description.")
+parser.add_argument("-u", "--username", type=str, help="GitHub username to investigate", required=True)
+parser.add_argument("-i", "--investigation", type=str, help="Name of directory to make and store result (default: results)", default="results")
+parser.add_argument("-p", "--picture", action="store_true", help="Download & Calculate SHA256 for Profile picture")
+parser.add_argument("-f", "--files", action="store_true", help="Iterate through commits of all accessible repos and archive files from each commit")
+parser.add_argument("-a", "--authors", action="store_true", help="Display unique list of all authors from accessible repos")
+parser.add_argument("-e", "--exclude-noreply", action="store_true", help="Exclude emails contains 'users.noreply.github.com' from author enumeration")
+parser.add_argument("-k", "--include-forks", action="store_true", help="Also search repos this user has forked")
 
-archive_files = False # Parses git log for every repo and collects every verion of all files ever committed
-collect_authors = True # Parses git log for author names/email addresses
-unique_authors = False # If true, then only display each author name once
-author_activity = False # set to an author name/email address or string to only display projects this author worked on
-exclude_github_noreply_addr = True
-include_forks = False # Set to true if you want to include repos the target had forked from somewhere else
-download_avatar = False # Download the github profile picture
+args = parser.parse_args()
+username = args.username
+investigation = args.investigation
+picture = args.picture
+files = args.files
+authors = args.authors
+exclude_github_noreply_addr = args.exclude_noreply
+include_forks = args.include_forks
 
 github_api_base_url = "https://api.github.com/"
-username = "montysecurity"
-all_authors = []
-investigation = " tmp1"
+all_authors = set()
 
 def get_user_info(url):
     userdictionary = {}
@@ -40,13 +49,13 @@ def get_avatar(url):
     with open("avatar.png", "rb") as f:
         bytes = f.read()
         sha256 = hashlib.sha256(bytes).hexdigest()
+    print("-------------------------- USER PPROFILE PHOTO INFO -----------------------")
+    print("[+] SHA256: " + str(sha256))
+    print("[+] Saved as: " + str(investigation) + "/avatar.png")
     print()
-    print("hash for avatar is " + str(sha256))
-    print("stored as avatar.png")
 
 def get_repos(url):
     repos = requests.get(url)
-    #print(repos.text)
     return repos
 
 def parse_repos(repos):
@@ -55,84 +64,65 @@ def parse_repos(repos):
         fork = i["fork"]
         if not include_forks and fork:
             continue
-        download_and_extract_repo_data(i["name"], i["html_url"], i["default_branch"])
+        if authors or files:
+            download_and_extract_repo_data(i["name"], i["html_url"], i["default_branch"])
     return repos
 
 def download_and_extract_repo_data(name, url, restore_branch):
-    if collect_authors or archive_files:
-        print(f"[+] Cloning {name}")
-        cmd = ["git", "clone", f"{str(url)}"]
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        proc.wait()
-    else:
-        return
-    if collect_authors:
+    print(f"[+] Cloning {name}")
+    cmd = ["git", "clone", f"{str(url)}"]
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc.wait()
+    if authors:
         try:
             os.chdir(name)
         except FileNotFoundError:
             return
-        authors = list(str(os.popen('powershell.exe "git log | findstr Author: | sort -u"').read()).split("Author: "))
-        for a in authors:
-            a = a.strip()
-            a += f" ------ {str(name)}"
-            all_authors.append(a.strip())
-    if archive_files:
+        authors_list = list(str(os.popen('powershell.exe "git log | findstr Author: | sort -u"').read()).split("Author: "))
+        for author in authors_list:
+            if len(author) != 0:
+                all_authors.add(author.strip())
+    if files:
+        try:
+            os.chdir(name)
+        except FileNotFoundError:
+            return
         powershell= f"$restore_branch = \"{str(restore_branch)}\";"
-        powershell += f"New-Item -Path ../ -Name {str(name).strip()}_GROT_Hashes -ItemType 'directory';"
+        powershell += f"New-Item -Path . -Name {str(name).strip()}_GROT_Hashes -ItemType 'directory';"
         powershell += """$commits=(git log | Select-String 'commit [a-z0-9]{40}'); $hashes=$(foreach ($commit in $commits) { -split $commit | Select-String '[a-z0-9]{40}' }); foreach ($hash in $hashes) {  git checkout $hash; Compress-Archive -Path ."""
-        powershell += f" -DestinationPath ../{str(name).strip()}_GROT_Hashes/$hash.zip;"
+        powershell += f" -DestinationPath {str(name).strip()}_GROT_Hashes/$hash.zip;"
         powershell += "sleep 3 }; git checkout $restore_branch"
         subprocess.run(["powershell.exe", str(powershell)])
     sleep(3)
-    os.chdir("../")
 
 def print_authors():
-    if author_activity is not False:
-        print(f"\n\n--------------------------- REPOS (where author contains '{author_activity}') ----------------------")
-    if author_activity is False:
-        print("\n\n--------------------------- AUTHORS ----------------------")
-    last_author = ""
-    for mapping in sorted(all_authors):
-        try:
-            author = str(mapping).split(" ------ ")[0]
-        except IndexError:
-            continue
-        try:
-            repo = str(mapping).split(" ------ ")[1]
-        except IndexError:
-            continue
+    if authors:
+        print("\n--------------------------- AUTHORS ----------------------")
+    for author in sorted(all_authors):
         if exclude_github_noreply_addr:
             if "users.noreply.github.com" in author:
                 continue
-        if author_activity is not False:
-            if author_activity in author:
-                print(f"[+] {str(repo)}")
-            continue
-        if unique_authors:
-            if last_author == author:
-                continue
-        print(f"[+] {author}: {repo}")
-        last_author = author
+        print(f"[+] {author}")
 
 def main():
     try:
         os.mkdir(investigation)
     except FileExistsError:
-        os.rmdir(investigation)
+        shutil.rmtree(investigation)
         sleep(1)
         os.mkdir(investigation)
+        sleep(1)
     os.chdir(investigation)
     userdictionary = get_user_info(github_api_base_url + "users/" + username)
-    if download_avatar:
+    if picture:
         get_avatar(userdictionary["avatar_url"])
     repos = get_repos(userdictionary["repos_url"])
     parse_repos(repos)
-    os.chdir("../")
-    print()
+    f = open(log_file, "a")
     print("-------------------------- USER GITHUB INFO -----------------------")
     for k in userdictionary:
         print(f"[+] {k}: {userdictionary[k]}")
-    if collect_authors:
+    if authors:
         print_authors()
         print()
 
