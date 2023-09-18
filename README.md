@@ -20,7 +20,7 @@ GROT is a simple little tool that can be used to mine data from a publicly acces
 ## Other Notes
 
 - There is an option to include repos the user has forked
-- There is an option to exclude no-reply addresses from the author list. It will not effect file archiving or keywork searching.
+- There is an option to exclude no-reply addresses from the author list. It will not effect file archiving or keyword searching.
 
 ## Usage
 
