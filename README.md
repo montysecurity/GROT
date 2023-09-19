@@ -1,6 +1,12 @@
 # GROT
 Github Repo OSINT Tool
 
+## Requirements
+
+- Python 3.11+
+- Windows OS
+- PowerShell 5+
+
 ## Introduction
 
 GROT is a simple little tool that can be used to mine data from a publicly accessible GitHub account via the REST API (there is no support for GitLab at the moment). Provided a username (`-u`, `--username`) it will automatically collect the bio and display that information. Optionally it can also:
