@@ -31,7 +31,7 @@ GROT is a simple little tool that can be used to mine data from a publicly acces
 ## Usage
 
 ```
-usage: grot.py [-h] -u USERNAME [-i INVESTIGATION] [-p] [-f] [-a] [-e] [-k] [-s SEARCH] [--seconds SECONDS]
+usage: grot.py [-h] -u USERNAME [--userinfo] [-i INVESTIGATION] [-p] [-f] [-a] [-e] [-k] [-s SEARCH] [-r REPO] [--seconds SECONDS]
 
 GitHub Repo OSINT Tool
 
@@ -39,6 +39,7 @@ options:
   -h, --help            show this help message and exit
   -u USERNAME, --username USERNAME
                         GitHub username to investigate
+  --userinfo            Print username info
   -i INVESTIGATION, --investigation INVESTIGATION
                         Name of directory to make and store result (default: results)
   -p, --picture         Download & Calculate SHA256 for Profile picture
@@ -49,5 +50,7 @@ options:
   -k, --include-forks   Also search repos this user has forked
   -s SEARCH, --search SEARCH
                         Search for the provided string in all commits
-  --seconds SECONDS     Number of seconds to sleep between archiving commits (Default: 3) (Increase this if you see an error sayng zip files are being used by another process)
+  -r REPO, --repo REPO  Limit search to the repo provided
+  --seconds SECONDS     Number of seconds to sleep between archiving commits (Default: 3) (Increase this if you see an error sayng zip files are being used by        
+                        another process)
 ```
