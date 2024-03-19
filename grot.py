@@ -88,7 +88,8 @@ def download_and_extract_repo_data(name, url, restore_branch):
         except FileNotFoundError:
             return
         if authors:
-            authors_list = list(str(os.popen('powershell.exe "git log | findstr Author: | sort -u"').read()).split("Author: "))
+            print(f"[+] Extracting Authors from {str(name)}")
+            authors_list = list(str(os.popen('powershell.exe "git log | findstr Author: | sort -u').read()).split("Author: "))
             for author in authors_list:
                 if len(author.strip()) != 0:
                     all_authors.add(author.strip())
@@ -136,8 +137,8 @@ def main():
         print("\n-------------------------- USER GITHUB INFO -----------------------")
         for k in userdictionary:
             print(f"[+] {k}: {userdictionary[k]}")
-        if authors:
-            print_authors()
-            print()
+    if authors:
+        print_authors()
+        print()
 
 main()
