@@ -52,9 +52,7 @@ for repo in json.loads(repos.text):
         contributer_username = contributors[0]['login']
         if contributer_username != username:
             continue
-    print(len(contributors))
-    print(repo_url)
-    print(repo_name)
+    print(f"[+] Parsing {repo_name}")
     commits_url = f"https://api.github.com/repos/{username}/{repo_name}/commits"
     repo_commits = requests.get(url=commits_url)
     if repo_commits.status_code != 200:
@@ -72,6 +70,6 @@ for repo in json.loads(repos.text):
         proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         proc.wait()
 
-print("[+] Listing Emails and Linked Repos")
+print("\n[+] Listing Emails and Linked Repos")
 for pair in emails:
     print("--->", pair)
