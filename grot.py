@@ -68,10 +68,10 @@ for repo in json.loads(repos.text):
             emails.add(repo_email_pair)
     if clone:
         cmd = ["git", "clone", f"{str(repo_url)}"]
-        if platform == "windows":
+        if platform in ["windows", "win32"]:
             proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             proc.wait()
-        elif platform == "linux" or platform == "linux2":
+        elif platform in ["linux", "linux2"]:
             subprocess.call(cmd)
         else:
             print(f"[!] Failed to clone repo. Unknown platform: {platform}")
