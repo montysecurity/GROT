@@ -72,7 +72,7 @@ for repo in json.loads(repos.text):
             proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             proc.wait()
         elif platform in ["linux", "linux2"]:
-            subprocess.call(cmd)
+            subprocess.run(cmd)
         else:
             print(f"[!] Failed to clone repo. Unknown platform: {platform}")
 
