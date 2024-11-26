@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import argparse
+from sys import platform
 
 parser = argparse.ArgumentParser(description="Extract Email Addresses from GitHub account repos. By default, only searches repos with one contributor and does not search forks.")
 parser.add_argument("-u", "--username", type=str, help="GitHub Username")
@@ -67,8 +68,13 @@ for repo in json.loads(repos.text):
             emails.add(repo_email_pair)
     if clone:
         cmd = ["git", "clone", f"{str(repo_url)}"]
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        proc.wait()
+        if platform == "windows":
+            proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            proc.wait()
+        elif platform == "linux" or platform == "linux2":
+            subprocess.call(cmd)
+        else:
+            print(f"[!] Failed to clone repo. Unknown platform: {platform}")
 
 print("\n[+] Listing Emails and Linked Repos")
 for pair in emails:
