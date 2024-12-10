@@ -44,12 +44,14 @@ for repo in json.loads(repos.text):
     repo_url = f"https://github.com/{repo_fullname}"
     contributors_url = f"https://api.github.com/repos/{repo_fullname}/contributors"
     contributors = requests.get(url=contributors_url)
+    if len(contributors.text) == 0: # seen on repos with no content
+        continue
     contributors = json.loads(contributors.text)
     if len(contributors) > 1 and not include_contributors:
         continue
     if not include_contributors:
         contributer_username = contributors[0]['login']
-        if contributer_username != username:
+        if str(contributer_username).casefold() != str(username).casefold():
             continue
     print(f"[+] Parsing {repo_name}")
     commits_url = f"https://api.github.com/repos/{username}/{repo_name}/commits"
