@@ -4,7 +4,7 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser(description="Extract Email Addresses from GitHub account repos. By default, only searches repos with one contributor and does not search forks.")
-parser.add_argument("-u", "--username", type=str, help="GitHub Username")
+parser.add_argument("-u", "--username", type=str, help="GitHub Username", required=True)
 parser.add_argument("-c", "--clone-repos", action="store_true", help="Clone repos locally")
 parser.add_argument("-k", "--include-forks", action="store_true", help="Pull data from repos the account has forked")
 parser.add_argument("-q", "--include-contributors", action="store_true", help="Pull data from repos that have multiple contributors (automatically made true if including forks)")
